@@ -5,11 +5,11 @@ Benchmark currently covers [rug]() and [num-bigfloat]. It runs 5 iterations for 
 
 ## Usage
 
-cargo run --release -- --lib rug --lib num-bigfloat -n 5 \
-                       --task add_sub --task mul_div --task sqrt \
-                       --task cbrt --task ln --task exp --task pow \
-                       --task sin_asin --task cos_acos --task tan_atan \
-                       --task sinh_asinh --task cosh_acosh --task tanh_atanh
+> cargo run --release -- --lib rug --lib num-bigfloat -n 5 \
+>                        --task add_sub --task mul_div --task sqrt \
+>                        --task cbrt --task ln --task exp --task pow \
+>                        --task sin_asin --task cos_acos --task tan_atan \
+>                        --task sinh_asinh --task cosh_acosh --task tanh_atanh
 
 ## Results
 
