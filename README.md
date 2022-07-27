@@ -1,7 +1,7 @@
 # bigfloat-bench
 
 A benchmark of bigfloat libraries for Rust. This is reworked version of [bigint-benchmark-rs](https://github.com/tczajka/bigint-benchmark-rs).
-Benchmark currently covers [rug]() and [num-bigfloat]. It runs 5 iterations for each task and selects the best result.
+Benchmark currently covers [rug](https://crates.io/crates/rug) and [num-bigfloat](https://crates.io/crates/num-bigfloat). It runs 5 iterations for each task and selects the best result.
 
 ## Usage
 
