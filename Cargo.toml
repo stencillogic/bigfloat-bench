@@ -1,0 +1,18 @@
+[package]
+name = "bigfloat-bench"
+version = "0.1.0"
+authors = ["stencillogic <stencillogic@gmail.com>"]
+edition = "2018"
+description = "A benchmark of bigfloat libraries for Rust "
+keywords = ["bigfloat", "bignum", "mathematics", "benchmark"]
+categories = ["mathematics"]
+license = "MIT"
+repository = "https://github.com/stencillogic/bigfloat-bench"
+homepage = "https://github.com/stencillogic/bigfloat-bench"
+readme = "README.md"
+
+[dependencies]
+clap = "2.33.3"
+rug = { version = "1.16.0", features = ["float", "rand"]}
+num-bigfloat = "1.3.1"
+rand = "0.8.5"
