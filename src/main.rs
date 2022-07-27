@@ -68,13 +68,23 @@ fn main() {
 
 fn benchmark_lib_task<T: Number>(task: &str, n: usize) -> String {
     let vals: Vec<T> = get_range_for_task(task);
-    let mut durations: Vec<Duration> = Vec::new();
+    let mut durations: Vec<u32> = Vec::new();
     for _ in 0..n {
-        let (_a, d) = run_task_using::<T>(task, &vals);
-        durations.push(d);
+        let mut full_dur = 0;
+        let mut iter = 1;
+        let mut niter = 0;
+        while full_dur < 1000 && iter < 16 {
+            niter += iter;
+            for _ in 0..iter {
+                let (_a, d) = run_task_using::<T>(task, &vals);
+                full_dur += d.as_micros();
+            }
+            iter*=2;
+        }
+        durations.push((full_dur/niter/1000) as u32);
     }
-    durations.sort();
-    format!("{} ms", durations[0].as_millis())
+    durations.sort_unstable();
+    format!("{} ms", durations[0])
 }
 
 fn get_range_for_task<T: Number>(task: &str) -> Vec<T> {

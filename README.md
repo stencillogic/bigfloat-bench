@@ -15,10 +15,10 @@ cargo run --release -- --lib rug --lib num-bigfloat -n 5 \
 
 ## Results
 
-| Task                                                                                  | rug (v1.16.0) | num-bigfloat(1.3.1) |
-| --------------                                                                        | ------- | ------ |
-|    add_sub (1,000,000 of additions and subtractions)                                    |  23 ms  |   176 ms  |
-|    mul_div (1,000,000 of multiplications and divisions)                                 |  39 ms  |   231 ms  |
+| Task                                                                                   | rug (v1.16.0) | num-bigfloat(1.3.1) |
+| --------------                                                                         | ------- | ------ |
+|    add_sub (1,000,000 of additions and subtractions)                                   |  23 ms  |   176 ms  |
+|    mul_div (1,000,000 of multiplications and divisions)                                |  39 ms  |   231 ms  |
 |       sqrt (100,000 of square root computations)                                       |  17 ms  |   853 ms  |
 |       cbrt (100,000 of cube root computations)                                         |  56 ms  |  1347 ms  |
 |         ln (10,000 of natural logarith computations)                                   |  11 ms  |    59 ms  |
