@@ -4,13 +4,14 @@ use std::time::{Duration, Instant};
 
 mod number;
 mod tasks;
+mod astro;
 
 fn main() {
     let args = App::new("Float numbers benchmarks")
         .arg(
             Arg::with_name("lib")
                 .long("lib")
-                .possible_values(&["rug", "num-bigfloat"])
+                .possible_values(&["rug", "num-bigfloat", "astro-float"])
                 .multiple(true)
                 .number_of_values(1)
                 .required(true)
@@ -58,6 +59,7 @@ fn main() {
             let res = match lib.as_str() {
                 "rug" => benchmark_lib_task::<rug::Float>(task, n),
                 "num-bigfloat" => benchmark_lib_task::<num_bigfloat::BigFloat>(task, n),
+                "astro-float" => benchmark_lib_task::<crate::astro::AstroFloat>(task, n),
                 _ => unreachable!(),
             };
             print!("{: >15}", res);

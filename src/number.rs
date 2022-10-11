@@ -4,6 +4,7 @@ use std::{
 };
 use rug::{rand::RandState, Float};
 use rand::random;
+use crate::astro::AstroFloat;
 
 pub(crate) trait Number
 where
@@ -227,5 +228,93 @@ impl Number for num_bigfloat::BigFloat {
 
     fn atanh(&self) -> Self {
         self.atanh()
+    }
+}
+
+
+
+impl Number for AstroFloat {
+    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32) -> Vec<Self> {
+        let mut ret = vec![];
+        for _ in 0..n {
+            ret.push(AstroFloat::random_normal(exp_shift, exp_range));
+        }
+        ret
+    }
+
+
+    fn sqrt(&self) -> Self {
+        AstroFloat::new(self.inner().abs().unwrap().sqrt(astro_float::RoundingMode::ToEven).unwrap())
+    }
+
+    fn cbrt(&self) -> Self {
+        self.clone()
+    }
+
+    fn ln(&self) -> Self {
+        AstroFloat::new(self.inner().abs().unwrap().ln(astro_float::RoundingMode::ToEven).unwrap())
+    }
+
+    fn exp(&self) -> Self {
+        match self.inner().exp(astro_float::RoundingMode::ToEven) {
+            Ok(n) => AstroFloat::new(n),
+            Err(e) => match e {
+                astro_float::Error::ExponentOverflow(_) => self.clone(),
+                _ => panic!(),
+            }
+        }
+        
+    }
+
+    fn pow(&self, _n: &Self) -> Self {
+        self.clone()
+    }
+    
+    fn sin(&self) -> Self {
+        AstroFloat::new(self.inner().sin(astro_float::RoundingMode::ToEven).unwrap())
+    }
+        
+    fn asin(&self) -> Self {
+        AstroFloat::new(self.inner().asin(astro_float::RoundingMode::ToEven).unwrap())
+    }
+
+    fn cos(&self) -> Self {
+        AstroFloat::new(self.inner().cos(astro_float::RoundingMode::ToEven).unwrap())
+    }
+        
+    fn acos(&self) -> Self {
+        AstroFloat::new(self.inner().acos(astro_float::RoundingMode::ToEven).unwrap())
+    }
+
+    fn tan(&self) -> Self {
+        AstroFloat::new(self.inner().tan(astro_float::RoundingMode::ToEven).unwrap())
+    }
+        
+    fn atan(&self) -> Self {
+        AstroFloat::new(self.inner().atan(astro_float::RoundingMode::ToEven).unwrap())
+    }
+
+    fn sinh(&self) -> Self {
+        self.clone()
+    }
+
+    fn asinh(&self) -> Self {
+        self.clone()
+    }
+
+    fn cosh(&self) -> Self {
+        self.clone()
+    }
+
+    fn acosh(&self) -> Self {
+        self.clone()
+    }
+
+    fn tanh(&self) -> Self {
+        self.clone()
+    }
+
+    fn atanh(&self) -> Self {
+        self.clone()
     }
 }
