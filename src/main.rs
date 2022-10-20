@@ -1,6 +1,8 @@
 use clap::{App, Arg};
-use number::Number;
+use number::{Number, GlobalState};
 use std::time::{Duration, Instant};
+
+use crate::number::{StubGlobalState, AstroGlobalState};
 
 mod number;
 mod tasks;
@@ -57,9 +59,9 @@ fn main() {
         print!("{: >15}", task);
         for lib in &libs {
             let res = match lib.as_str() {
-                "rug" => benchmark_lib_task::<rug::Float>(task, n),
-                "num-bigfloat" => benchmark_lib_task::<num_bigfloat::BigFloat>(task, n),
-                "astro-float" => benchmark_lib_task::<crate::astro::AstroFloat>(task, n),
+                "rug" => benchmark_lib_task::<StubGlobalState, rug::Float>(task, n),
+                "num-bigfloat" => benchmark_lib_task::<StubGlobalState, num_bigfloat::BigFloat>(task, n),
+                "astro-float" => benchmark_lib_task::<AstroGlobalState, crate::astro::AstroFloat>(task, n),
                 _ => unreachable!(),
             };
             print!("{: >15}", res);
@@ -68,7 +70,7 @@ fn main() {
     }
 }
 
-fn benchmark_lib_task<T: Number>(task: &str, n: usize) -> String {
+fn benchmark_lib_task<G: GlobalState, T: Number<G>>(task: &str, n: usize) -> String {
     let vals: Vec<T> = get_range_for_task(task);
     let mut durations: Vec<u32> = Vec::new();
     for _ in 0..n {
@@ -78,7 +80,7 @@ fn benchmark_lib_task<T: Number>(task: &str, n: usize) -> String {
         while full_dur < 1000 && iter < 16 {
             niter += iter;
             for _ in 0..iter {
-                let (_a, d) = run_task_using::<T>(task, &vals);
+                let (_a, d) = run_task_using::<G, T>(task, &vals);
                 full_dur += d.as_micros();
             }
             iter*=2;
@@ -89,7 +91,8 @@ fn benchmark_lib_task<T: Number>(task: &str, n: usize) -> String {
     format!("{} ms", durations[0])
 }
 
-fn get_range_for_task<T: Number>(task: &str) -> Vec<T> {
+fn get_range_for_task<G: GlobalState, T: Number<G>>(task: &str) -> Vec<T> {
+    let gs = T::global_state();
     let (n, exp_range, exp_shift) = match task {
         "add_sub" => (1000000, 10, 40),
         "mul_div" => (1000000, 40, 40),
@@ -106,26 +109,26 @@ fn get_range_for_task<T: Number>(task: &str) -> Vec<T> {
         "tanh_atanh" => (10000, 3, 40),
         _ => unreachable!(),
     };
-    T::rand_normal(n, exp_range, exp_shift)
+    T::rand_normal(n, exp_range, exp_shift, gs)
 }
 
-fn run_task_using<T: Number>(task: &str, vals: &[T]) -> (T, Duration) {
+fn run_task_using<G: GlobalState, T: Number<G>>(task: &str, vals: &[T]) -> (T, Duration) {
     let start_time = Instant::now();
 
     let a = match task {
-        "add_sub" => tasks::add_sub::<T>(vals),
-        "mul_div" => tasks::mul_div::<T>(vals),
-        "sqrt" => tasks::sqrt::<T>(vals),
-        "cbrt" => tasks::cbrt::<T>(vals),
-        "ln" => tasks::ln::<T>(vals),
-        "exp" => tasks::exp::<T>(vals),
-        "pow" => tasks::pow::<T>(&vals[10..], &vals[..10]),
-        "sin_asin" => tasks::sin_asin::<T>(vals),
-        "cos_acos" => tasks::cos_acos::<T>(vals),
-        "tan_atan" => tasks::tan_atan::<T>(vals),
-        "sinh_asinh" => tasks::sinh_asinh::<T>(vals),
-        "cosh_acosh" => tasks::cosh_acosh::<T>(vals),
-        "tanh_atanh" => tasks::tanh_atanh::<T>(vals),
+        "add_sub" => tasks::add_sub::<G, T>(vals),
+        "mul_div" => tasks::mul_div::<G, T>(vals),
+        "sqrt" => tasks::sqrt::<G, T>(vals),
+        "cbrt" => tasks::cbrt::<G, T>(vals),
+        "ln" => tasks::ln::<G, T>(vals),
+        "exp" => tasks::exp::<G, T>(vals),
+        "pow" => tasks::pow::<G, T>(&vals[10..], &vals[..10]),
+        "sin_asin" => tasks::sin_asin::<G, T>(vals),
+        "cos_acos" => tasks::cos_acos::<G, T>(vals),
+        "tan_atan" => tasks::tan_atan::<G, T>(vals),
+        "sinh_asinh" => tasks::sinh_asinh::<G, T>(vals),
+        "cosh_acosh" => tasks::cosh_acosh::<G, T>(vals),
+        "tanh_atanh" => tasks::tanh_atanh::<G, T>(vals),
         _ => unreachable!(),
     };
 

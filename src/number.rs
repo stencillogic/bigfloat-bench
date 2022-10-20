@@ -1,12 +1,26 @@
 use std::{
     fmt::Display,
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, Div, Mul, Sub, Deref, DerefMut}, cell::RefCell,
+    rc::Rc,
 };
+use astro_float::Consts;
 use rug::{rand::RandState, Float};
 use rand::random;
 use crate::astro::AstroFloat;
 
-pub(crate) trait Number
+pub(crate) trait GlobalState {}
+
+pub struct StubGlobalState {}
+
+impl GlobalState for StubGlobalState {}
+
+pub struct AstroGlobalState {
+    cc: Rc<RefCell<Consts>>
+}
+
+impl GlobalState for AstroGlobalState {}
+
+pub(crate) trait Number<G: GlobalState>
 where
     Self: Sized,
     Self: Display,
@@ -20,7 +34,9 @@ where
     Self: Div<Self, Output = Self>,
     Self: for<'a> Div<&'a Self, Output = Self>,
 {
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32) -> Vec<Self>;
+    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, gs: G) -> Vec<Self>;
+
+    fn global_state() -> G;
 
     fn sqrt(&self) -> Self;
 
@@ -57,8 +73,8 @@ where
     fn atanh(&self) -> Self;
 }
 
-impl Number for rug::Float {
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32) -> Vec<Self> {
+impl Number<StubGlobalState> for rug::Float {
+    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, _gs: StubGlobalState) -> Vec<Self> {
         let mut rand = RandState::new();
         let mut ret = vec![];
         for _ in 0..n {
@@ -69,6 +85,10 @@ impl Number for rug::Float {
             ret.push(Float::with_val(132, if exp >= 0 { f*p*sign } else { f/p*sign }));
         }
         ret
+    }
+
+    fn global_state() -> StubGlobalState {
+        StubGlobalState {}
     }
 
     fn sqrt(&self) -> Self {
@@ -140,8 +160,8 @@ impl Number for rug::Float {
     }
 }
 
-impl Number for num_bigfloat::BigFloat {
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32) -> Vec<Self> {
+impl Number<StubGlobalState> for num_bigfloat::BigFloat {
+    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, _gs: StubGlobalState) -> Vec<Self> {
         let mut ret = vec![];
         for _ in 0..n {
             let mut mantissa = [0i16; 10];
@@ -161,6 +181,9 @@ impl Number for num_bigfloat::BigFloat {
         ret
     }
 
+    fn global_state() -> StubGlobalState {
+        StubGlobalState {}
+    }
 
     fn sqrt(&self) -> Self {
         self.abs().sqrt()
@@ -233,18 +256,24 @@ impl Number for num_bigfloat::BigFloat {
 
 
 
-impl Number for AstroFloat {
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32) -> Vec<Self> {
+impl Number<AstroGlobalState> for AstroFloat {
+
+    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, gs: AstroGlobalState) -> Vec<Self> {
         let mut ret = vec![];
         for _ in 0..n {
-            ret.push(AstroFloat::random_normal(exp_shift, exp_range));
+            ret.push(AstroFloat::random_normal(exp_shift, exp_range, gs.cc.clone()));
         }
         ret
     }
 
+    fn global_state() -> AstroGlobalState {
+        AstroGlobalState {
+            cc: Rc::new(RefCell::new(Consts::new().unwrap()))
+        }
+    }
 
     fn sqrt(&self) -> Self {
-        AstroFloat::new(self.inner().abs().unwrap().sqrt(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().abs().unwrap().sqrt(astro_float::RoundingMode::ToEven).unwrap(), self.cc.clone())
     }
 
     fn cbrt(&self) -> Self {
@@ -252,12 +281,12 @@ impl Number for AstroFloat {
     }
 
     fn ln(&self) -> Self {
-        AstroFloat::new(self.inner().abs().unwrap().ln(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().abs().unwrap().ln(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
 
     fn exp(&self) -> Self {
-        match self.inner().exp(astro_float::RoundingMode::ToEven) {
-            Ok(n) => AstroFloat::new(n),
+        match self.inner().exp(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()) {
+            Ok(n) => AstroFloat::new(n, self.cc.clone()),
             Err(e) => match e {
                 astro_float::Error::ExponentOverflow(_) => self.clone(),
                 _ => panic!(),
@@ -271,27 +300,27 @@ impl Number for AstroFloat {
     }
     
     fn sin(&self) -> Self {
-        AstroFloat::new(self.inner().sin(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().sin(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
         
     fn asin(&self) -> Self {
-        AstroFloat::new(self.inner().asin(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().asin(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
 
     fn cos(&self) -> Self {
-        AstroFloat::new(self.inner().cos(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().cos(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
         
     fn acos(&self) -> Self {
-        AstroFloat::new(self.inner().acos(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().acos(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
 
     fn tan(&self) -> Self {
-        AstroFloat::new(self.inner().tan(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().tan(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
         
     fn atan(&self) -> Self {
-        AstroFloat::new(self.inner().atan(astro_float::RoundingMode::ToEven).unwrap())
+        AstroFloat::new(self.inner().atan(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
 
     fn sinh(&self) -> Self {
