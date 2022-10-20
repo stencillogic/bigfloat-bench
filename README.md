@@ -15,6 +15,8 @@ cargo run --release -- --lib rug --lib num-bigfloat --lib astro-float -n 5 \
 
 ## Results
 
+Results for the precision 132 bit:
+
 | Task                                                                                   | rug (v1.16.0) | num-bigfloat (1.3.1) | astro-float (0.0.1) |
 | --------------                                                                         | ------- | ------ | ------ |
 |    add_sub (1,000,000 of additions and subtractions)                                   |  23 ms  |   176 ms  |    96 ms  |
