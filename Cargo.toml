@@ -15,7 +15,10 @@ readme = "README.md"
 clap = "2.33.3"
 rug = { version = "1.16.0", features = ["float", "rand"]}
 num-bigfloat = "1.3.1"
-astro-float = "0.1.0"
+#astro-float = "0.1.0"
+dashu-float = "0.3.0"
+dashu-int = "0.3.0"
+astro-float = "0.3.0" #{ git = "https://github.com/stencillogic/astro-float", branch = "develop" }
 rand = "0.8.5"
 
 [profile.release]

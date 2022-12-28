@@ -4,9 +4,11 @@ use std::{
     rc::Rc,
 };
 use astro_float::Consts;
+use dashu_float::{round::mode::HalfEven, FBig};
+use dashu_int::{IBig, UBig, ops::Abs};
 use rug::{rand::RandState, Float};
 use rand::random;
-use crate::astro::AstroFloat;
+use crate::{astro::AstroFloat};
 
 pub(crate) trait GlobalState {}
 
@@ -273,19 +275,19 @@ impl Number<AstroGlobalState> for AstroFloat {
     }
 
     fn sqrt(&self) -> Self {
-        AstroFloat::new(self.inner().abs().unwrap().sqrt(astro_float::RoundingMode::ToEven).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().abs().unwrap().sqrt(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven).unwrap(), self.cc.clone())
     }
 
     fn cbrt(&self) -> Self {
-        self.clone()
+        AstroFloat::new(self.inner().cbrt(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven).unwrap(), self.cc.clone())
     }
 
     fn ln(&self) -> Self {
-        AstroFloat::new(self.inner().abs().unwrap().ln(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().abs().unwrap().ln(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
 
     fn exp(&self) -> Self {
-        match self.inner().exp(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()) {
+        match self.inner().exp(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()) {
             Ok(n) => AstroFloat::new(n, self.cc.clone()),
             Err(e) => match e {
                 astro_float::Error::ExponentOverflow(_) => self.clone(),
@@ -295,32 +297,135 @@ impl Number<AstroGlobalState> for AstroFloat {
         
     }
 
-    fn pow(&self, _n: &Self) -> Self {
-        self.clone()
+    fn pow(&self, n: &Self) -> Self {
+        AstroFloat::new(self.inner().abs().unwrap().pow(n.inner(), self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
     
     fn sin(&self) -> Self {
-        AstroFloat::new(self.inner().sin(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().sin(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
         
     fn asin(&self) -> Self {
-        AstroFloat::new(self.inner().asin(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().asin(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
 
     fn cos(&self) -> Self {
-        AstroFloat::new(self.inner().cos(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().cos(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
         
     fn acos(&self) -> Self {
-        AstroFloat::new(self.inner().acos(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().acos(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
 
     fn tan(&self) -> Self {
-        AstroFloat::new(self.inner().tan(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().tan(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
     }
         
     fn atan(&self) -> Self {
-        AstroFloat::new(self.inner().atan(astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().atan(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+    }
+
+    fn sinh(&self) -> Self {
+        AstroFloat::new(self.inner().sinh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+    }
+
+    fn asinh(&self) -> Self {
+        AstroFloat::new(self.inner().asinh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+    }
+
+    fn cosh(&self) -> Self {
+        AstroFloat::new(self.inner().cosh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+    }
+
+    fn acosh(&self) -> Self {
+        AstroFloat::new(self.inner().acosh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+    }
+
+    fn tanh(&self) -> Self {
+        AstroFloat::new(self.inner().tanh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+    }
+
+    fn atanh(&self) -> Self {
+        AstroFloat::new(self.inner().atanh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+    }
+}
+
+
+impl Number<StubGlobalState> for FBig<HalfEven, 2> {
+    fn rand_normal(n: usize, exp_range: i32, _exp_shift: i32, _gs: StubGlobalState) -> Vec<Self> {
+        let mut ret = vec![];
+        for _ in 0..n {
+
+            let mut mantissa = [0u64; 3];
+            for i in 0..3 {
+                mantissa[i] = random();
+            }
+            if mantissa[mantissa.len() - 1] == 0 {
+                mantissa[mantissa.len() - 1] = u64::MAX;
+            }
+            while mantissa[mantissa.len() - 1] <= (u64::MAX >> 1) {
+                mantissa[mantissa.len() - 1] <<= 1;
+            }
+
+            let sign = if random::<i8>() & 1 == 0 {dashu_int::Sign::Positive} else {dashu_int::Sign::Negative};
+            let exp = (if exp_range != 0 {random::<i32>().abs() % exp_range} else {0}) - mantissa.len() as i32 * 64 - exp_range / 2;
+
+            let m = UBig::from_words(&mantissa);
+            let i = IBig::from_parts(sign, m);
+
+            ret.push(FBig::from_parts(i, exp as isize));
+        }
+        ret
+    }
+
+    fn global_state() -> StubGlobalState {
+        StubGlobalState {  }
+    }
+
+    fn sqrt(&self) -> Self {
+        let s = self.clone().abs();
+        FBig::<HalfEven, 2>::sqrt(&s)
+    }
+
+    fn cbrt(&self) -> Self {
+        self.clone()
+    }
+
+    fn ln(&self) -> Self {
+        FBig::<HalfEven, 2>::ln(self)
+    }
+
+    fn exp(&self) -> Self {
+        FBig::<HalfEven, 2>::exp(self)
+    }
+
+    fn pow(&self, n: &Self) -> Self {
+        let s = self.clone().abs();
+        FBig::<HalfEven, 2>::powf(&s, n)
+    }
+
+    fn sin(&self) -> Self {
+        self.clone()
+    }
+
+    fn asin(&self) -> Self {
+        self.clone()
+    }
+
+    fn cos(&self) -> Self {
+        self.clone()
+    }
+
+    fn acos(&self) -> Self {
+        self.clone()
+    }
+
+    fn tan(&self) -> Self {
+        self.clone()
+    }
+
+    fn atan(&self) -> Self {
+        self.clone()
     }
 
     fn sinh(&self) -> Self {

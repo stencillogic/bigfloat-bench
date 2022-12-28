@@ -1,4 +1,5 @@
 use clap::{App, Arg};
+use dashu_float::{FBig, round::mode::HalfEven};
 use number::{Number, GlobalState};
 use std::time::{Duration, Instant};
 
@@ -13,7 +14,7 @@ fn main() {
         .arg(
             Arg::with_name("lib")
                 .long("lib")
-                .possible_values(&["rug", "num-bigfloat", "astro-float"])
+                .possible_values(&["rug", "num-bigfloat", "dashu-float", "astro-float"])
                 .multiple(true)
                 .number_of_values(1)
                 .required(true)
@@ -61,6 +62,7 @@ fn main() {
             let res = match lib.as_str() {
                 "rug" => benchmark_lib_task::<StubGlobalState, rug::Float>(task, n),
                 "num-bigfloat" => benchmark_lib_task::<StubGlobalState, num_bigfloat::BigFloat>(task, n),
+                "dashu-float" => benchmark_lib_task::<StubGlobalState, FBig<HalfEven, 2>>(task, n),
                 "astro-float" => benchmark_lib_task::<AstroGlobalState, crate::astro::AstroFloat>(task, n),
                 _ => unreachable!(),
             };
