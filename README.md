@@ -1,12 +1,17 @@
 # bigfloat-bench
 
-A benchmark of bigfloat libraries for Rust. This is reworked version of [bigint-benchmark-rs](https://github.com/tczajka/bigint-benchmark-rs).
-Benchmark currently covers [rug](https://crates.io/crates/rug), [num-bigfloat](https://crates.io/crates/num-bigfloat), [astro-float](https://crates.io/crates/astro-float). It runs 5 iterations for each task and selects the best result. Each task uses an array of random normal floats with nearly the same precision.
+A benchmark of bigfloat libraries for Rust. 
+
+This is reworked version of [bigint-benchmark-rs](https://github.com/tczajka/bigint-benchmark-rs).
+
+Benchmark covers [rug](https://crates.io/crates/rug), [num-bigfloat](https://crates.io/crates/num-bigfloat), [astro-float](https://crates.io/crates/astro-float), [dashu-float](https://github.com/cmpute/dashu) (unfortunately, dashu-float doesn't work for some reason and is not present among the benchmark results at the moment, although you can try running benchmark with it included). 
+
+Benchmark runs 5 iterations for each task and selects the best result. Each task uses an array of random normal floats with nearly the same precision.
 
 ## Usage
 
 ``` sh
-cargo run --release -- --lib rug --lib num-bigfloat --lib astro-float --lib dashu-float -n 5 \
+cargo run --release -- --lib rug --lib num-bigfloat --lib astro-float -n 5 \
                        --task add_sub --task mul_div --task sqrt \
                        --task cbrt --task ln --task exp --task pow \
                        --task sin_asin --task cos_acos --task tan_atan \
