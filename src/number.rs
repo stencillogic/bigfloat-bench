@@ -5,10 +5,10 @@ use std::{
 };
 use astro_float::Consts;
 use dashu_float::{round::mode::HalfEven, FBig};
-use dashu_int::{IBig, UBig, ops::Abs};
-use rug::{rand::RandState, Float};
+use dashu_int::{IBig, UBig};
+use rug::{rand::RandState, Float, ops::CompleteRound};
 use rand::random;
-use crate::{astro::AstroFloat};
+use crate::astro::AstroFloat;
 
 pub(crate) trait GlobalState {}
 
@@ -27,18 +27,18 @@ where
     Self: Sized,
     Self: Display,
     Self: Clone,
-    Self: Add<Self, Output = Self>,
-    Self: for<'a> Add<&'a Self, Output = Self>,
-    Self: Sub<Self, Output = Self>,
-    Self: for<'a> Sub<&'a Self, Output = Self>,
-    Self: Mul<Self, Output = Self>,
-    Self: for<'a> Mul<&'a Self, Output = Self>,
-    Self: Div<Self, Output = Self>,
-    Self: for<'a> Div<&'a Self, Output = Self>,
 {
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, gs: G) -> Vec<Self>;
+    fn rand_normal(n: usize, exp_from: i32, exp_to: i32, gs: G, sign_positive: bool) -> Vec<Self>;
 
     fn global_state() -> G;
+
+    fn add(&self, rhs: &Self) -> Self;
+
+    fn sub(&self, rhs: &Self) -> Self;
+
+    fn mul(&self, rhs: &Self) -> Self;
+
+    fn div(&self, rhs: &Self) -> Self;
 
     fn sqrt(&self) -> Self;
 
@@ -76,14 +76,15 @@ where
 }
 
 impl Number<StubGlobalState> for rug::Float {
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, _gs: StubGlobalState) -> Vec<Self> {
+    fn rand_normal(n: usize, exp_from: i32, exp_to: i32, _gs: StubGlobalState, sign_positive: bool) -> Vec<Self> {
         let mut rand = RandState::new();
         let mut ret = vec![];
         for _ in 0..n {
-            let sign = if random::<i8>() & 1 == 0 {1} else {-1};
-            let exp = (if exp_range != 0 {random::<i32>().abs() % exp_range} else {0}) - exp_shift + 40;
+            let sign = if sign_positive || random::<i8>() & 1 == 0 {1} else {-1};
+            let exp_range = exp_to - exp_from;
+            let exp = (if exp_range != 0 {random::<i32>().abs() % exp_range} else {0}) + exp_from;
             let f = Float::with_val(132,Float::random_bits(&mut rand));
-            let p = Float::with_val(132, Float::i_pow_u(10, exp.abs() as u32));
+            let p = Float::with_val(132, Float::i_pow_u(10, exp.unsigned_abs()));
             ret.push(Float::with_val(132, if exp >= 0 { f*p*sign } else { f/p*sign }));
         }
         ret
@@ -93,8 +94,24 @@ impl Number<StubGlobalState> for rug::Float {
         StubGlobalState {}
     }
 
+    fn add(&self, rhs: &Self) -> Self {
+        <&Self as Add<&Self>>::add(self, rhs).complete(self.prec())
+    }
+
+    fn sub(&self, rhs: &Self) -> Self {
+        <&Self as Sub<&Self>>::sub(self, rhs).complete(self.prec())
+    }
+
+    fn mul(&self, rhs: &Self) -> Self {
+        <&Self as Mul<&Self>>::mul(self, rhs).complete(self.prec())
+    }
+
+    fn div(&self, rhs: &Self) -> Self {
+        <&Self as Div<&Self>>::div(self, rhs).complete(self.prec())
+    }
+
     fn sqrt(&self) -> Self {
-        self.clone().abs().sqrt()
+        self.clone().sqrt()
     }
 
     fn cbrt(&self) -> Self {
@@ -163,21 +180,21 @@ impl Number<StubGlobalState> for rug::Float {
 }
 
 impl Number<StubGlobalState> for num_bigfloat::BigFloat {
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, _gs: StubGlobalState) -> Vec<Self> {
+    fn rand_normal(n: usize, exp_from: i32, exp_to: i32, _gs: StubGlobalState, sign_positive: bool) -> Vec<Self> {
         let mut ret = vec![];
         for _ in 0..n {
             let mut mantissa = [0i16; 10];
-            for i in 0..10 {
-                mantissa[i] = (random::<u16>() % 10000) as i16;
-            }
+            mantissa.iter_mut().for_each(|v| *v = (random::<u16>() % 10000) as i16);
+
             if mantissa[9] == 0 {
                 mantissa[9] = 9999;
             }
             while mantissa[9] / 1000 == 0 {
                 mantissa[9] *= 10;
             }
-            let sign = if random::<i8>() & 1 == 0 {1} else {-1};
-            let exp = (if exp_range != 0 {random::<i32>().abs() % exp_range} else {0}) - exp_shift;
+            let sign = if sign_positive || random::<i8>() & 1 == 0 {1} else {-1};
+            let exp_range = exp_to - exp_from;
+            let exp = (if exp_range != 0 {random::<i32>().abs() % exp_range} else {0}) + exp_from - 40;
             ret.push(num_bigfloat::BigFloat::from_raw_parts(mantissa, 40, sign, exp as i8));
         }
         ret
@@ -187,8 +204,24 @@ impl Number<StubGlobalState> for num_bigfloat::BigFloat {
         StubGlobalState {}
     }
 
+    fn add(&self, rhs: &Self) -> Self {
+        num_bigfloat::BigFloat::add(self, rhs)
+    }
+
+    fn sub(&self, rhs: &Self) -> Self {
+        num_bigfloat::BigFloat::sub(self, rhs)
+    }
+
+    fn mul(&self, rhs: &Self) -> Self {
+        num_bigfloat::BigFloat::mul(self, rhs)
+    }
+
+    fn div(&self, rhs: &Self) -> Self {
+        num_bigfloat::BigFloat::div(self, rhs)
+    }
+
     fn sqrt(&self) -> Self {
-        self.abs().sqrt()
+        self.sqrt()
     }
 
     fn cbrt(&self) -> Self {
@@ -196,7 +229,7 @@ impl Number<StubGlobalState> for num_bigfloat::BigFloat {
     }
 
     fn ln(&self) -> Self {
-        self.abs().ln()
+        self.ln()
     }
 
     fn exp(&self) -> Self {
@@ -260,10 +293,10 @@ impl Number<StubGlobalState> for num_bigfloat::BigFloat {
 
 impl Number<AstroGlobalState> for AstroFloat {
 
-    fn rand_normal(n: usize, exp_range: i32, exp_shift: i32, gs: AstroGlobalState) -> Vec<Self> {
+    fn rand_normal(n: usize, exp_from: i32, exp_to: i32, gs: AstroGlobalState, sign_positive: bool) -> Vec<Self> {
         let mut ret = vec![];
         for _ in 0..n {
-            ret.push(AstroFloat::random_normal(exp_shift, exp_range, gs.cc.clone()));
+            ret.push(AstroFloat::random_normal(exp_from, exp_to, gs.cc.clone(), sign_positive));
         }
         ret
     }
@@ -274,92 +307,100 @@ impl Number<AstroGlobalState> for AstroFloat {
         }
     }
 
+    fn add(&self, rhs: &Self) -> Self {
+        AstroFloat::new(self.inner().add(rhs.inner(), self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven), self.cc.clone())
+    }
+
+    fn sub(&self, rhs: &Self) -> Self {
+        AstroFloat::new(self.inner().sub(rhs.inner(), self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven), self.cc.clone())
+    }
+
+    fn mul(&self, rhs: &Self) -> Self {
+        AstroFloat::new(self.inner().mul(rhs.inner(), self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven), self.cc.clone())
+    }
+
+    fn div(&self, rhs: &Self) -> Self {
+        AstroFloat::new(self.inner().div(rhs.inner(), self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven), self.cc.clone())
+    }
+
     fn sqrt(&self) -> Self {
-        AstroFloat::new(self.inner().abs().unwrap().sqrt(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().sqrt(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven), self.cc.clone())
     }
 
     fn cbrt(&self) -> Self {
-        AstroFloat::new(self.inner().cbrt(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().cbrt(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven), self.cc.clone())
     }
 
     fn ln(&self) -> Self {
-        AstroFloat::new(self.inner().abs().unwrap().ln(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().ln(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn exp(&self) -> Self {
-        match self.inner().exp(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()) {
-            Ok(n) => AstroFloat::new(n, self.cc.clone()),
-            Err(e) => match e {
-                astro_float::Error::ExponentOverflow(_) => self.clone(),
-                _ => panic!(),
-            }
-        }
-        
+        AstroFloat::new(self.inner().exp(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn pow(&self, n: &Self) -> Self {
-        AstroFloat::new(self.inner().abs().unwrap().pow(n.inner(), self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().pow(n.inner(), self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
     
     fn sin(&self) -> Self {
-        AstroFloat::new(self.inner().sin(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().sin(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
         
     fn asin(&self) -> Self {
-        AstroFloat::new(self.inner().asin(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().asin(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn cos(&self) -> Self {
-        AstroFloat::new(self.inner().cos(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().cos(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
         
     fn acos(&self) -> Self {
-        AstroFloat::new(self.inner().acos(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().acos(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn tan(&self) -> Self {
-        AstroFloat::new(self.inner().tan(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().tan(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
         
     fn atan(&self) -> Self {
-        AstroFloat::new(self.inner().atan(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().atan(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn sinh(&self) -> Self {
-        AstroFloat::new(self.inner().sinh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().sinh(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn asinh(&self) -> Self {
-        AstroFloat::new(self.inner().asinh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().asinh(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn cosh(&self) -> Self {
-        AstroFloat::new(self.inner().cosh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().cosh(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn acosh(&self) -> Self {
-        AstroFloat::new(self.inner().acosh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().acosh(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn tanh(&self) -> Self {
-        AstroFloat::new(self.inner().tanh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().tanh(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 
     fn atanh(&self) -> Self {
-        AstroFloat::new(self.inner().atanh(self.inner().get_mantissa_max_bit_len(), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()).unwrap(), self.cc.clone())
+        AstroFloat::new(self.inner().atanh(self.inner().mantissa_max_bit_len().unwrap_or(1), astro_float::RoundingMode::ToEven, self.cc.deref().borrow_mut().deref_mut()), self.cc.clone())
     }
 }
 
 
 impl Number<StubGlobalState> for FBig<HalfEven, 2> {
-    fn rand_normal(n: usize, exp_range: i32, _exp_shift: i32, _gs: StubGlobalState) -> Vec<Self> {
+    fn rand_normal(n: usize, exp_from: i32, exp_to: i32, _gs: StubGlobalState, sign_positive: bool) -> Vec<Self> {
         let mut ret = vec![];
         for _ in 0..n {
 
             let mut mantissa = [0u64; 3];
-            for i in 0..3 {
-                mantissa[i] = random();
-            }
+            mantissa.iter_mut().for_each(|v| *v = random());
+
             if mantissa[mantissa.len() - 1] == 0 {
                 mantissa[mantissa.len() - 1] = u64::MAX;
             }
@@ -367,13 +408,15 @@ impl Number<StubGlobalState> for FBig<HalfEven, 2> {
                 mantissa[mantissa.len() - 1] <<= 1;
             }
 
-            let sign = if random::<i8>() & 1 == 0 {dashu_int::Sign::Positive} else {dashu_int::Sign::Negative};
-            let exp = (if exp_range != 0 {random::<i32>().abs() % exp_range} else {0}) - mantissa.len() as i32 * 64 - exp_range / 2;
+            let exp_range = exp_to - exp_from;
+            let sign = if sign_positive || random::<i8>() & 1 == 0 {dashu_int::Sign::Positive} else {dashu_int::Sign::Negative};
+            let exp = (if exp_range != 0 {random::<i32>().abs() % exp_range} else {0}) - mantissa.len() as i32 * 64 + exp_from;
+            let exp = exp as isize * 3321928095 / 1000000000;
 
             let m = UBig::from_words(&mantissa);
             let i = IBig::from_parts(sign, m);
 
-            ret.push(FBig::from_parts(i, exp as isize));
+            ret.push(FBig::from_parts(i, exp));
         }
         ret
     }
@@ -382,8 +425,24 @@ impl Number<StubGlobalState> for FBig<HalfEven, 2> {
         StubGlobalState {  }
     }
 
+    fn add(&self, rhs: &Self) -> Self {
+        <&FBig<dashu_float::round::mode::HalfEven> as Add>::add(self, rhs)
+    }
+
+    fn sub(&self, rhs: &Self) -> Self {
+        <&FBig<dashu_float::round::mode::HalfEven> as Sub>::sub(self, rhs)
+    }
+
+    fn mul(&self, rhs: &Self) -> Self {
+        <&FBig<dashu_float::round::mode::HalfEven> as Mul>::mul(self, rhs)
+    }
+
+    fn div(&self, rhs: &Self) -> Self {
+        <&FBig<dashu_float::round::mode::HalfEven> as Div>::div(self, rhs)
+    }
+
     fn sqrt(&self) -> Self {
-        let s = self.clone().abs();
+        let s = self.clone();
         FBig::<HalfEven, 2>::sqrt(&s)
     }
 
@@ -400,7 +459,7 @@ impl Number<StubGlobalState> for FBig<HalfEven, 2> {
     }
 
     fn pow(&self, n: &Self) -> Self {
-        let s = self.clone().abs();
+        let s = self.clone();
         FBig::<HalfEven, 2>::powf(&s, n)
     }
 

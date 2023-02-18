@@ -1,4 +1,4 @@
-//! Wrapper for astro_float::BigFloatNumber
+//! Wrapper for astro_float::BigFloat
 
 use std::{
     fmt::Display,
@@ -6,35 +6,40 @@ use std::{
     cell::RefCell,
     rc::Rc,
 };
-use astro_float::{BigFloatNumber, Consts};
+use astro_float::{BigFloat, Consts, Sign};
 use astro_float::Exponent;
 use astro_float::RoundingMode;
-use astro_float::Radix;
 
 pub struct AstroFloat
 {
-    af: BigFloatNumber,
+    af: BigFloat,
     pub cc: Rc<RefCell<Consts>>,
 }
 
 
 impl AstroFloat {
 
-    pub fn random_normal(exp_shift: Exponent, exp_range: Exponent, cc: Rc<RefCell<Consts>>) -> Self {
+    pub fn random_normal(exp_from: Exponent, exp_to: Exponent, cc: Rc<RefCell<Consts>>, sign_positive: bool) -> Self {
+        let exp_from = (exp_from as i64 * 3321928095 / 1000000000) as Exponent;
+        let exp_to = (exp_to as i64 * 3321928095 / 1000000000) as Exponent;
+        let mut af = BigFloat::random_normal(132, exp_from, exp_to);
+        if sign_positive {
+            af.set_sign(Sign::Pos);
+        }
         AstroFloat {
-            af: BigFloatNumber::random_normal(132, 40-exp_shift, 40-exp_shift + exp_range).unwrap(),
+            af,
             cc,
         }
     }
 
-    pub fn new(f: BigFloatNumber, cc: Rc<RefCell<Consts>>) -> Self {
+    pub fn new(f: BigFloat, cc: Rc<RefCell<Consts>>) -> Self {
         AstroFloat {
             af: f,
             cc,
         }
     }
 
-    pub fn inner(&self) -> &BigFloatNumber {
+    pub fn inner(&self) -> &BigFloat {
         &self.af
     }
 }
@@ -42,14 +47,14 @@ impl AstroFloat {
 
 impl Display for AstroFloat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.af.format(Radix::Dec, RoundingMode::ToEven).unwrap())
+        write!(f, "{}", self.af)
     }
 }
 
 impl Clone for AstroFloat {
     fn clone(&self) -> Self {
         Self {
-            af: self.af.clone().unwrap(),
+            af: self.af.clone(),
             cc: self.cc.clone(),
         }
     }
@@ -60,7 +65,7 @@ impl Add<Self> for AstroFloat {
 
     fn add(self, rhs: Self) -> Self::Output {
         AstroFloat {
-            af: self.af.add(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.add(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }
@@ -71,7 +76,7 @@ impl<'a> Add<&'a Self> for AstroFloat {
 
     fn add(self, rhs: &'a Self) -> Self::Output {
         AstroFloat {
-            af: self.af.add(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.add(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }
@@ -82,7 +87,7 @@ impl Sub<Self> for AstroFloat {
 
     fn sub(self, rhs: Self) -> Self::Output {
         AstroFloat {
-            af: self.af.sub(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.sub(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }
@@ -93,7 +98,7 @@ impl<'a> Sub<&'a Self> for AstroFloat {
 
     fn sub(self, rhs: &'a Self) -> Self::Output {
         AstroFloat {
-            af: self.af.sub(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.sub(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }
@@ -104,7 +109,7 @@ impl Mul<Self> for AstroFloat {
 
     fn mul(self, rhs: Self) -> Self::Output {
         AstroFloat {
-            af: self.af.mul(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.mul(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }
@@ -115,7 +120,7 @@ impl<'a> Mul<&'a Self> for AstroFloat {
 
     fn mul(self, rhs: &'a Self) -> Self::Output {
         AstroFloat {
-            af: self.af.mul(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.mul(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }
@@ -126,7 +131,7 @@ impl Div<Self> for AstroFloat {
 
     fn div(self, rhs: Self) -> Self::Output {
         AstroFloat {
-            af: self.af.div(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.div(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }
@@ -137,7 +142,7 @@ impl<'a> Div<&'a Self> for AstroFloat {
 
     fn div(self, rhs: &'a Self) -> Self::Output {
         AstroFloat {
-            af: self.af.div(&rhs.af, self.af.get_mantissa_max_bit_len(), RoundingMode::ToEven).unwrap(),
+            af: self.af.div(&rhs.af, self.af.mantissa_max_bit_len().unwrap_or(1), RoundingMode::ToEven),
             cc: self.cc
         }
     }

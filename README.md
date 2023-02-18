@@ -12,64 +12,88 @@ Benchmark runs 5 iterations for each task and selects the best result. Each task
 
 ``` sh
 cargo run --release -- --lib rug --lib num-bigfloat --lib astro-float -n 5 \
-                       --task add_sub --task mul_div --task sqrt \
+                       --task add --task sub --task mul --task div --task sqrt \
                        --task cbrt --task ln --task exp --task pow \
-                       --task sin_asin --task cos_acos --task tan_atan \
-                       --task sinh_asinh --task cosh_acosh --task tanh_atanh
+                       --task sin --task asin --task cos --task acos --task tan --task atan \
+                       --task sinh --task asinh --task cosh --task acosh --task tanh --task atanh
 ```
 
 ## Results
 
 Results for the precision 132 bit:
 
-| Task                                                                                   | rug (v1.16.0) | num-bigfloat (1.3.1) | astro-float (0.3.0) |
-| --------------                                                                         | ------- | ------ | ------ |
-|    add_sub (1,000,000 of additions and subtractions)                                   |  23 ms  |   176 ms  |   87 ms  |
-|    mul_div (1,000,000 of multiplications and divisions)                                |  39 ms  |   231 ms  |  122 ms  |
-|       sqrt (100,000 of square root computations)                                       |  17 ms  |   853 ms  |  385 ms  |
-|       cbrt (100,000 of cube root computations)                                         |  56 ms  |  1347 ms  |  778 ms  |
-|         ln (10,000 of natural logarith computations)                                   |  11 ms  |    59 ms  |  308 ms  |
-|        exp (10,000 of e^n computations)                                                |  12 ms  |   134 ms  |  212 ms  |
-|        pow (10,000 of power computations)                                              |  22 ms  |   144 ms  |  596 ms  |
-|   sin_asin (10,000 of sine and then arcsine computations)                              |  61 ms  |   265 ms  |  642 ms  |
-|   cos_acos (10,000 of cosine and then arccosine computations)                          |  59 ms  |   268 ms  |  723 ms  |
-|   tan_atan (10,000 of tangent and then arctangent computations)                        |  58 ms  |   115 ms  |  772 ms  |
-| sinh_asinh (10,000 of hyperbolic sine and then hyperbolic arcsine computations)        |  48 ms  |   276 ms  |  609 ms  |
-| cosh_acosh (10,000 of hyperbolic cosine and then hyperbolic arccosine computations)    |  50 ms  |   281 ms  |  610 ms  |
-| tanh_atanh (10,000 of hyperbolic tangent and then hyperbolic arctangent computations)  |  42 ms  |   203 ms  |  618 ms  |
+| Task                                          | rug (v1.16.0) | num-bigfloat (1.3.1) | astro-float (0.6.5) |
+| --------------                                | ------- | ------ | ------ |
+| 1,000,000 of additions and subtractions       |  45 ms  |   185 ms  |    104 ms  |
+| 1,000,000 of multiplications and divisions    |  42 ms  |   185 ms  |    103 ms  |
+| 1,000,000 of additions and subtractions       |  34 ms  |   273 ms  |     97 ms  |
+| 1,000,000 of multiplications and divisions    |  92 ms  |   630 ms  |    305 ms  |
+| 100,000 of square root computations           |  16 ms  |   888 ms  |    803 ms  |
+| 100,000 of cube root computations             |  54 ms  |  1359 ms  |   2320 ms  |
+| 10,000 of natural logarith computations       |  22 ms  |    62 ms  |    527 ms  |
+| 10,000 of e^n computations                    |  10 ms  |   116 ms  |    240 ms  |
+| 10,000 of power computations                  |  25 ms  |   142 ms  |    487 ms  |
+| 10,000 of sine computations                   |  12 ms  |    80 ms  |    145 ms  |
+| 10,000 of cosine computations                 |  28 ms  |   119 ms  |    286 ms  |
+| 10,000 of tangent computations                |   7 ms  |    78 ms  |    156 ms  |
+| 10,000 of hyperbolic sine computations        |  29 ms  |   120 ms  |    362 ms  |
+| 10,000 of hyperbolic cosine computations      |  15 ms  |    53 ms  |    330 ms  |
+| 10,000 of hyperbolic tangent computations     |  22 ms  |    31 ms  |    131 ms  |
+| 10,000 of arcsine computations                |  12 ms  |    61 ms  |    292 ms  |
+| 10,000 of arccosine computations              |  72 ms  |    96 ms  |    746 ms  |
+| 10,000 of arctangent computations             |  11 ms  |    57 ms  |    291 ms  |
+| 10,000 of hyperbolic arcsine computations     |  27 ms  |   152 ms  |    722 ms  |
+| 10,000 of hyperbolic arccosine computations   |  12 ms  |    69 ms  |    299 ms  |
+| 10,000 of hyperbolic arctangent computations  |  28 ms  |    51 ms  |    587 ms  |
 
 Results for the precision 1,000 bit:
 
-| Task                                                                                   | rug (v1.16.0) | astro-float (0.3.0) |
-| --------------                                                                         | ------ | ------ |
-|    add_sub (100,000 of additions and subtractions)                                     |   3 ms  |   13 ms  |
-|    mul_div (100,000 of multiplications and divisions)                                  |  10 ms  |   39 ms  |
-|       sqrt (10,000 of square root computations)                                        |   4 ms  |   62 ms  |
-|       cbrt (10,000 of cube root computations)                                          |  11 ms  |  259 ms  |
-|         ln (1,000 of natural logarith computations)                                    |   5 ms  |  126 ms  |
-|        exp (1,000 of e^n computations)                                                 |   7 ms  |   74 ms  |
-|        pow (1,000 of power computations)                                               |   9 ms  |  213 ms  |
-|   sin_asin (1,000 of sine and then arcsine computations)                               |  37 ms  |  254 ms  |
-|   cos_acos (1,000 of cosine and then arccosine computations)                           |  36 ms  |  271 ms  |
-|   tan_atan (1,000 of tangent and then arctangent computations)                         |  32 ms  |  314 ms  |
-| sinh_asinh (1,000 of hyperbolic sine and then hyperbolic arcsine computations)         |  19 ms  |  221 ms  |
-| cosh_acosh (1,000 of hyperbolic cosine and then hyperbolic arccosine computations)     |  20 ms  |  221 ms  |
-| tanh_atanh (1,000 of hyperbolic tangent and then hyperbolic arctangent computations)   |  19 ms  |  246 ms  |
+| Task                                          | rug (v1.16.0) | astro-float (0.6.5) |
+| --------------                                | ------- | ------ |
+| 100,0000 of additions and subtractions        |   5 ms  |    15 ms  |
+| 100,0000 of multiplications and divisions     |   5 ms  |    15 ms  |
+| 100,0000 of additions and subtractions        |  15 ms  |    34 ms  |
+| 100,0000 of multiplications and divisions     |  26 ms  |   114 ms  |
+| 10,000 of square root computations            |   4 ms  |   100 ms  |
+| 10,000 of cube root computations              |  12 ms  |  1179 ms  |
+| 1,000 of natural logarith computations        |  10 ms  |   154 ms  |
+| 1,000 of e^n computations                     |   6 ms  |    73 ms  |
+| 1,000 of power computations                   |   9 ms  |   137 ms  |
+| 1,000 of sine computations                    |   6 ms  |    63 ms  |
+| 1,000 of cosine computations                  |  14 ms  |    96 ms  |
+| 1,000 of tangent computations                 |   4 ms  |    63 ms  |
+| 1,000 of hyperbolic sine computations         |  14 ms  |   108 ms  |
+| 1,000 of hyperbolic cosine computations       |   6 ms  |   135 ms  |
+| 1,000 of hyperbolic tangent computations      |  13 ms  |    69 ms  |
+| 1,000 of arcsine computations                 |   7 ms  |    85 ms  |
+| 1,000 of arccosine computations               |  23 ms  |   197 ms  |
+| 1,000 of arctangent computations              |   6 ms  |    86 ms  |
+| 1,000 of hyperbolic arcsine computations      |  10 ms  |   188 ms  |
+| 1,000 of hyperbolic arccosine computations    |   7 ms  |    88 ms  |
+| 1,000 of hyperbolic arctangent computations   |  35 ms  |   153 ms  |
 
-Results for the precision 100,000 bits:
+Results for the precision 10,000 bits:
 
-| Task                                                                                   | rug (v1.16.0) | astro-float (0.3.0) |
-| --------------                                                                         | ------- | -------- |
-|    add_sub (10,000 of additions and subtractions)                                      |   13 ms  |     35 ms  |
-|    mul_div (100 of multiplications and divisions)                                      |   10 ms  |     42 ms  |
-|       sqrt (100 of square root computations)                                           |   19 ms  |    397 ms  |
-|       cbrt (10 of cube root computations)                                              |    4 ms  |    420 ms  |
-|         ln (10 of natural logarith computations)                                       |   76 ms  |   8650 ms  |
-|        exp (10 of e^n computations)                                                    |  134 ms  |   4971 ms  |
-|        pow (10 of power computations)                                                  |   93 ms  |  13493 ms  |
-|   sin_asin (10 of sine and then arcsine computations)                                  |  434 ms  |  10533 ms  |
-|   cos_acos (10 of cosine and then arccosine computations)                              |  431 ms  |   9983 ms  |
-|   tan_atan (10 of tangent and then arctangent computations)                            |  427 ms  |  18468 ms  |
-| sinh_asinh (10 of hyperbolic sine and then hyperbolic arcsine computations)            |  235 ms  |  13616 ms  |
-| cosh_acosh (10 of hyperbolic cosine and then hyperbolic arccosine computations)        |  237 ms  |  13668 ms  |
-| tanh_atanh (10 of hyperbolic tangent and then hyperbolic arctangent computations)      |  239 ms  |  17406 ms  |
+| Task                                          | rug (v1.16.0) | astro-float (0.6.5) |
+| --------------                                | ------- | ------ |
+| 100,0000 of additions and subtractions        |   22 ms  |    50 ms  |
+| 100,0000 of multiplications and divisions     |   22 ms  |    51 ms  |
+| 100,0000 of additions and subtractions        |  481 ms  |  1466 ms  |
+| 100,0000 of multiplications and divisions     |  724 ms  |  4451 ms  |
+| 10,000 of square root computations            |   49 ms  |   371 ms  |
+| 1,000 of cube root computations               |   13 ms  |  4780 ms  |
+| 100 of natural logarith computations          |   21 ms  |   769 ms  |
+| 100 of e^n computations                       |   33 ms  |   448 ms  |
+| 100 of power computations                     |   30 ms  |   644 ms  |
+| 100 of sine computations                      |   37 ms  |   438 ms  |
+| 100 of cosine computations                    |   35 ms  |   484 ms  |
+| 100 of tangent computations                   |   35 ms  |   401 ms  |
+| 100 of hyperbolic sine computations           |   36 ms  |   454 ms  |
+| 100 of hyperbolic cosine computations         |   37 ms  |  1110 ms  |
+| 100 of hyperbolic tangent computations        |   35 ms  |   426 ms  |
+| 100 of arcsine computations                   |   34 ms  |   459 ms  |
+| 100 of arccosine computations                 |   41 ms  |   813 ms  |
+| 100 of arctangent computations                |   33 ms  |   456 ms  |
+| 100 of hyperbolic arcsine computations        |   21 ms  |   774 ms  |
+| 100 of hyperbolic arccosine computations      |   33 ms  |   456 ms  |
+| 100 of hyperbolic arctangent computations     |   62 ms  |   704 ms  |

@@ -23,8 +23,8 @@ fn main() {
         .arg(
             Arg::with_name("task")
                 .long("task")
-                .possible_values(&["add_sub", "mul_div", "sqrt", "cbrt", "ln", "exp", "pow",
-                    "sin_asin", "cos_acos", "tan_atan", "sinh_asinh", "cosh_acosh", "tanh_atanh"])
+                .possible_values(&["add", "sub", "mul", "div", "sqrt", "cbrt", "ln", "exp", "pow",
+                    "sin", "asin", "cos", "acos", "tan", "atan", "sinh", "asinh", "cosh", "acosh", "tanh", "atanh"])
                 .multiple(true)
                 .number_of_values(1)
                 .required(true)
@@ -95,42 +95,59 @@ fn benchmark_lib_task<G: GlobalState, T: Number<G>>(task: &str, n: usize) -> Str
 
 fn get_range_for_task<G: GlobalState, T: Number<G>>(task: &str) -> Vec<T> {
     let gs = T::global_state();
-    let (n, exp_range, exp_shift) = match task {
-        "add_sub" => (1000000, 10, 40),
-        "mul_div" => (1000000, 40, 40),
-        "sqrt" => (100000, 256, 128),
-        "cbrt" => (100000, 256, 128),
-        "ln" => (10000, 256, 128),
-        "exp" => (10000, 4, 40),
-        "pow" => (10000, 4, 40),
-        "sin_asin" => (10000, 3, 40),
-        "cos_acos" => (10000, 3, 40),
-        "tan_atan" => (10000, 3, 40),
-        "sinh_asinh" => (10000, 3, 40),
-        "cosh_acosh" => (10000, 3, 40),
-        "tanh_atanh" => (10000, 3, 40),
+    // exponent has base 10
+    let (n, exp_from, exp_to, sign_positive) = match task {
+        "add" => (100000, -10, 10, false),
+        "sub" => (100000, -10, 10, false),
+        "mul" => (100000, -10, 10, false),
+        "div" => (100000, -10, 10, false),
+        "sqrt" => (10000, -10, 10, true),
+        "cbrt" => (1000, -10, 10, false),
+        "ln" => (100, -10, 10, true),
+        "exp" => (100, -10, 3, false),
+        "pow" => (100, -5, 5, false),
+        "sin" => (100, -10, 3, false),
+        "cos" => (100, -10, 3, false),
+        "tan" => (100, -10, 3, false),
+        "sinh" => (100, -10, 3, false),
+        "cosh" => (100, -10, 3, false),
+        "tanh" => (100, -10, 3, false),
+        "asin" => (100, -10, 0, false),
+        "acos" => (100, -10, 0, false),
+        "atan" => (100, -10, 0, false),
+        "asinh" => (100, -10, 10, false),
+        "acosh" => (100, 1, 10, true),
+        "atanh" => (100, -10, 0, false),
         _ => unreachable!(),
     };
-    T::rand_normal(n, exp_range, exp_shift, gs)
+    T::rand_normal(n, exp_from, exp_to, gs, sign_positive)
 }
 
 fn run_task_using<G: GlobalState, T: Number<G>>(task: &str, vals: &[T]) -> (T, Duration) {
     let start_time = Instant::now();
 
     let a = match task {
-        "add_sub" => tasks::add_sub::<G, T>(vals),
-        "mul_div" => tasks::mul_div::<G, T>(vals),
-        "sqrt" => tasks::sqrt::<G, T>(vals),
-        "cbrt" => tasks::cbrt::<G, T>(vals),
-        "ln" => tasks::ln::<G, T>(vals),
-        "exp" => tasks::exp::<G, T>(vals),
-        "pow" => tasks::pow::<G, T>(&vals[10..], &vals[..10]),
-        "sin_asin" => tasks::sin_asin::<G, T>(vals),
-        "cos_acos" => tasks::cos_acos::<G, T>(vals),
-        "tan_atan" => tasks::tan_atan::<G, T>(vals),
-        "sinh_asinh" => tasks::sinh_asinh::<G, T>(vals),
-        "cosh_acosh" => tasks::cosh_acosh::<G, T>(vals),
-        "tanh_atanh" => tasks::tanh_atanh::<G, T>(vals),
+        "add" => tasks::task_for_two_args::<G, T>(vals, T::add),
+        "sub" => tasks::task_for_two_args::<G, T>(vals, T::sub),
+        "mul" => tasks::task_for_two_args::<G, T>(vals, T::mul),
+        "div" => tasks::task_for_two_args::<G, T>(vals, T::div),
+        "sqrt" => tasks::task_for_one_arg::<G, T>(vals, T::sqrt),
+        "cbrt" => tasks::task_for_one_arg::<G, T>(vals, T::cbrt),
+        "ln" => tasks::task_for_one_arg::<G, T>(vals, T::ln),
+        "exp" => tasks::task_for_one_arg::<G, T>(vals, T::exp),
+        "pow" => tasks::task_for_two_args::<G, T>(vals, T::pow),
+        "sin" => tasks::task_for_one_arg::<G, T>(vals, T::sin),
+        "cos" => tasks::task_for_one_arg::<G, T>(vals, T::cos),
+        "tan" => tasks::task_for_one_arg::<G, T>(vals, T::tan),
+        "sinh" => tasks::task_for_one_arg::<G, T>(vals, T::sinh),
+        "cosh" => tasks::task_for_one_arg::<G, T>(vals, T::cosh),
+        "tanh" => tasks::task_for_one_arg::<G, T>(vals, T::tanh),
+        "asin" => tasks::task_for_one_arg::<G, T>(vals, T::asin),
+        "acos" => tasks::task_for_one_arg::<G, T>(vals, T::acos),
+        "atan" => tasks::task_for_one_arg::<G, T>(vals, T::atan),
+        "asinh" => tasks::task_for_one_arg::<G, T>(vals, T::asinh),
+        "acosh" => tasks::task_for_one_arg::<G, T>(vals, T::acosh),
+        "atanh" => tasks::task_for_one_arg::<G, T>(vals, T::atanh),
         _ => unreachable!(),
     };
 
