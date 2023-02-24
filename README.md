@@ -24,10 +24,10 @@ Results for the precision 132 bit:
 
 | Task                                          | rug (v1.16.0) | num-bigfloat (1.3.1) | astro-float (0.6.5) |
 | --------------                                | ------- | ------ | ------ |
-| 1,000,000 of additions and subtractions       |  45 ms  |   185 ms  |    104 ms  |
-| 1,000,000 of multiplications and divisions    |  42 ms  |   185 ms  |    103 ms  |
-| 1,000,000 of additions and subtractions       |  34 ms  |   273 ms  |     97 ms  |
-| 1,000,000 of multiplications and divisions    |  92 ms  |   630 ms  |    305 ms  |
+| 1,000,000 of additions                        |  45 ms  |   185 ms  |    104 ms  |
+| 1,000,000 of subtractions                     |  42 ms  |   185 ms  |    103 ms  |
+| 1,000,000 of multiplications                  |  34 ms  |   273 ms  |     97 ms  |
+| 1,000,000 of divisions                        |  92 ms  |   630 ms  |    305 ms  |
 | 100,000 of square root computations           |  16 ms  |   888 ms  |    803 ms  |
 | 100,000 of cube root computations             |  54 ms  |  1359 ms  |   2320 ms  |
 | 10,000 of natural logarith computations       |  22 ms  |    62 ms  |    527 ms  |
@@ -50,10 +50,10 @@ Results for the precision 1,000 bit:
 
 | Task                                          | rug (v1.16.0) | astro-float (0.6.5) |
 | --------------                                | ------- | ------ |
-| 100,0000 of additions and subtractions        |   5 ms  |    15 ms  |
-| 100,0000 of multiplications and divisions     |   5 ms  |    15 ms  |
-| 100,0000 of additions and subtractions        |  15 ms  |    34 ms  |
-| 100,0000 of multiplications and divisions     |  26 ms  |   114 ms  |
+| 100,0000 of additions                         |   5 ms  |    15 ms  |
+| 100,0000 of subtractions                      |   5 ms  |    15 ms  |
+| 100,0000 of multiplications                   |  15 ms  |    34 ms  |
+| 100,0000 of divisions                         |  26 ms  |   114 ms  |
 | 10,000 of square root computations            |   4 ms  |   100 ms  |
 | 10,000 of cube root computations              |  12 ms  |  1179 ms  |
 | 1,000 of natural logarith computations        |  10 ms  |   154 ms  |
@@ -76,10 +76,10 @@ Results for the precision 10,000 bits:
 
 | Task                                          | rug (v1.16.0) | astro-float (0.6.5) |
 | --------------                                | ------- | ------ |
-| 100,0000 of additions and subtractions        |   22 ms  |    50 ms  |
-| 100,0000 of multiplications and divisions     |   22 ms  |    51 ms  |
-| 100,0000 of additions and subtractions        |  481 ms  |  1466 ms  |
-| 100,0000 of multiplications and divisions     |  724 ms  |  4451 ms  |
+| 100,0000 of additions                         |   22 ms  |    50 ms  |
+| 100,0000 of subtractions                      |   22 ms  |    51 ms  |
+| 100,0000 of multiplications                   |  481 ms  |  1466 ms  |
+| 100,0000 of divisions                         |  724 ms  |  4451 ms  |
 | 10,000 of square root computations            |   49 ms  |   371 ms  |
 | 1,000 of cube root computations               |   13 ms  |  4780 ms  |
 | 100 of natural logarith computations          |   21 ms  |   769 ms  |
